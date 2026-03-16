@@ -17,6 +17,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { UpdateEditorDto } from './dto/update-editor.dto';
+import { CreateEditorDto } from './dto/create-editor.dto';
 
 import {
   ApiTags,
@@ -74,7 +75,8 @@ export class AdminController {
   @Roles(Role.SUPER_ADMIN)
   @Post('editors')
   @ApiOperation({ summary: 'Create new editor' })
-  async createEditor(@Body() body) {
+  @ApiResponse({ status: 201, description: 'Editor created successfully' })
+  async createEditor(@Body() body: CreateEditorDto) {
     return this.adminService.createEditor(body);
   }
 
