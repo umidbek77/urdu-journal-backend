@@ -169,4 +169,11 @@ export class ArticlesController {
   async download(@Param('id') id: string) {
     return this.articlesService.downloadArticle(id);
   }
+
+  @Get('accepted')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  async acceptedArticles() {
+    return this.articlesService.acceptedArticles();
+  }
 }

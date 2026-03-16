@@ -253,4 +253,19 @@ export class ArticlesService {
 
     return article;
   }
+
+  async acceptedArticles() {
+    return this.prisma.article.findMany({
+      where: {
+        status: 'ACCEPTED',
+      },
+      include: {
+        author: true,
+        editor: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
 }
