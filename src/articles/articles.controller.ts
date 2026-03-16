@@ -10,16 +10,29 @@ import {
   Body,
   Req,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
+
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { ReviewArticleDto } from './dto/review-article.dto';
+
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Role } from '@prisma/client';
-import { BadRequestException } from '@nestjs/common';
 
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiConsumes,
+  ApiBody,
+  ApiParam,
+} from '@nestjs/swagger';
+
+@ApiTags('Articles')
+@ApiBearerAuth()
 @Controller('articles')
 export class ArticlesController {
   constructor(private articlesService: ArticlesService) {}
@@ -27,6 +40,19 @@ export class ArticlesController {
   @Post('upload')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload article file (PDF or DOCX)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
   async uploadArticle(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('File is required');
@@ -55,12 +81,14 @@ export class ArticlesController {
 
   @UseGuards(JwtAuthGuard)
   @Post('submit')
+  @ApiOperation({ summary: 'Submit article metadata' })
   async submitArticle(@Req() req, @Body() dto: CreateArticleDto) {
     return this.articlesService.submitArticle(req.user.userId, dto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('my')
+  @ApiOperation({ summary: 'Get my submitted articles' })
   async myArticles(@Req() req) {
     return this.articlesService.getMyArticles(req.user.userId);
   }
@@ -68,12 +96,14 @@ export class ArticlesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.EDITOR)
   @Get('submitted')
+  @ApiOperation({ summary: 'Get submitted articles for review' })
   async submittedArticles() {
     return this.articlesService.getSubmittedArticles();
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id/status')
+  @ApiParam({ name: 'id', example: 'article-id' })
   async updateStatus(
     @Param('id') id: string,
     @Body() body: { status: string },
@@ -84,6 +114,7 @@ export class ArticlesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.EDITOR)
   @Patch(':id/review')
+  @ApiParam({ name: 'id', example: 'article-id' })
   async reviewArticle(
     @Param('id') id: string,
     @Req() req,
@@ -95,6 +126,8 @@ export class ArticlesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
   @Patch(':id/publish/:issueId')
+  @ApiParam({ name: 'id', example: 'article-id' })
+  @ApiParam({ name: 'issueId', example: 'issue-id' })
   async publishArticle(
     @Param('id') id: string,
     @Param('issueId') issueId: string,
@@ -119,6 +152,7 @@ export class ArticlesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.EDITOR)
   @Get('editor/articles/:id')
+  @ApiParam({ name: 'id', example: 'article-id' })
   async articleDetail(@Param('id') id: string) {
     return this.articlesService.getArticleDetail(id);
   }
@@ -131,6 +165,7 @@ export class ArticlesController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/download')
+  @ApiParam({ name: 'id', example: 'article-id' })
   async download(@Param('id') id: string) {
     return this.articlesService.downloadArticle(id);
   }
