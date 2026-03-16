@@ -30,6 +30,7 @@ import {
   ApiBody,
   ApiParam,
 } from '@nestjs/swagger';
+import { UpdateArticleStatusDto } from './dto/update-article-status.dto';
 
 @ApiTags('Articles')
 @ApiBearerAuth()
@@ -101,14 +102,13 @@ export class ArticlesController {
     return this.articlesService.getSubmittedArticles();
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch(':id/status')
   @ApiParam({ name: 'id', example: 'article-id' })
   async updateStatus(
     @Param('id') id: string,
-    @Body() body: { status: string },
+    @Body() dto: UpdateArticleStatusDto,
   ) {
-    return this.articlesService.updateStatus(id, body.status);
+    return this.articlesService.updateStatus(id, dto.status);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
