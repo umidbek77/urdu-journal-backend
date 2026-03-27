@@ -10,6 +10,8 @@ async function bootstrap() {
     origin: [
       'http://localhost:5173',
       'https://urdu-journal.vercel.app',
+      'https://urdu-kit.web.app',
+      'https://urdu-kit.firebaseapp.com',
     ],
     credentials: true,
   });
