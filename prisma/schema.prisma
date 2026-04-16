@@ -53,6 +53,9 @@ model Article {
 
   feedback  String?
 
+  reviewFileUrl String?
+  paymentReceiptUrl String?
+
   issueId   String?
   issue     Issue?        @relation(fields: [issueId], references: [id])
 
@@ -67,6 +70,10 @@ model Issue {
   year      Int
 
   pdfUrl    String?
+
+  coverImageUrl String?
+  publishedDate DateTime?
+  series String?
 
   articles  Article[]
 

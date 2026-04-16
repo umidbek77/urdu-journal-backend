@@ -49,11 +49,17 @@ export class ArticlesService {
 
   async getMyArticles(userId: string) {
     return this.prisma.article.findMany({
-      where: {
-        authorId: userId,
-      },
-      orderBy: {
-        createdAt: 'desc',
+      where: { authorId: userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        feedback: true,
+        reviewFileUrl: true,
+        paymentReceiptUrl: true,
       },
     });
   }
@@ -84,15 +90,70 @@ export class ArticlesService {
     articleId: string,
     editorId: string,
     dto: ReviewArticleDto,
+    file?: Express.Multer.File,
   ) {
+    let reviewFileUrl: string | null = null;
+
+    if (file) {
+      if (file.mimetype !== 'application/pdf') {
+        throw new Error('Only PDF allowed');
+      }
+
+      const supabase = this.supabaseService.getClient();
+
+      const fileName = `review-${Date.now()}-${file.originalname}`;
+
+      const { error } = await supabase.storage
+        .from('reviews')
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+        });
+
+      if (error) throw new Error(error.message);
+
+      const { data } = supabase.storage.from('reviews').getPublicUrl(fileName);
+
+      reviewFileUrl = data.publicUrl;
+    }
+
     return this.prisma.article.update({
-      where: {
-        id: articleId,
-      },
+      where: { id: articleId },
       data: {
         status: dto.status,
         feedback: dto.feedback,
-        editorId: editorId,
+        editorId,
+        reviewFileUrl,
+      },
+    });
+  }
+
+  async uploadPayment(articleId: string, file: Express.Multer.File) {
+    const article = await this.prisma.article.findUnique({
+      where: { id: articleId },
+    });
+
+    if (!article || article.status !== 'ACCEPTED') {
+      throw new Error('Only accepted articles can upload payment');
+    }
+
+    const supabase = this.supabaseService.getClient();
+
+    const fileName = `payment-${Date.now()}-${file.originalname}`;
+
+    const { error } = await supabase.storage
+      .from('payments')
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+      });
+
+    if (error) throw new Error(error.message);
+
+    const { data } = supabase.storage.from('payments').getPublicUrl(fileName);
+
+    return this.prisma.article.update({
+      where: { id: articleId },
+      data: {
+        paymentReceiptUrl: data.publicUrl,
       },
     });
   }

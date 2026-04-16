@@ -8,14 +8,14 @@ export class CreateEditorDto {
     description: 'Editor full name'
   })
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiProperty({
     example: 'editor@test.com',
     description: 'Editor email'
   })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({
     example: '12345678',
@@ -23,6 +23,6 @@ export class CreateEditorDto {
   })
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 
 }

@@ -8,7 +8,7 @@ export class CreateArticleDto {
   })
   @IsString()
   @IsNotEmpty()
-  title: string;
+  title!: string;
 
   @ApiProperty({
     example:
@@ -17,7 +17,7 @@ export class CreateArticleDto {
   })
   @IsString()
   @IsNotEmpty()
-  abstract: string;
+  abstract!: string;
 
   @ApiProperty({
     example: 'AI, education, machine learning',
@@ -25,7 +25,7 @@ export class CreateArticleDto {
   })
   @IsString()
   @IsNotEmpty()
-  keywords: string;
+  keywords!: string;
 
   @ApiProperty({
     example: 'https://your-storage.com/articles/article.pdf',
@@ -33,5 +33,5 @@ export class CreateArticleDto {
   })
   @IsString()
   @IsNotEmpty()
-  fileUrl: string;
+  fileUrl!: string;
 }

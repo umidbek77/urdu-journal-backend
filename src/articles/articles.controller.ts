@@ -114,13 +114,26 @@ export class ArticlesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.EDITOR)
   @Patch(':id/review')
-  @ApiParam({ name: 'id', example: 'article-id' })
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   async reviewArticle(
     @Param('id') id: string,
     @Req() req,
+    @UploadedFile() file: Express.Multer.File,
     @Body() dto: ReviewArticleDto,
   ) {
-    return this.articlesService.reviewArticle(id, req.user.userId, dto);
+    return this.articlesService.reviewArticle(id, req.user.userId, dto, file);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/payment')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  async uploadPayment(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.articlesService.uploadPayment(id, file);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

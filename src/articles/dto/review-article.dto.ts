@@ -10,7 +10,7 @@ export class ReviewArticleDto {
     description: 'Article review status'
   })
   @IsEnum(ArticleStatus)
-  status: ArticleStatus;
+  status!: ArticleStatus;
 
   @ApiPropertyOptional({
     example: 'Please fix references formatting.',

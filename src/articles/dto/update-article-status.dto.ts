@@ -9,6 +9,6 @@ export class UpdateArticleStatusDto {
     enum: ArticleStatus,
   })
   @IsEnum(ArticleStatus)
-  status: ArticleStatus;
+  status!: ArticleStatus;
 
 }
