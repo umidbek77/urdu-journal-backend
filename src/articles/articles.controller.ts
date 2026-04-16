@@ -116,6 +116,25 @@ export class ArticlesController {
   @Patch(':id/review')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          example: 'ACCEPTED',
+        },
+        feedback: {
+          type: 'string',
+          example: 'Fix references',
+        },
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
   async reviewArticle(
     @Param('id') id: string,
     @Req() req,
@@ -129,10 +148,25 @@ export class ArticlesController {
   @Post(':id/payment')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
   async uploadPayment(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
     return this.articlesService.uploadPayment(id, file);
   }
 
