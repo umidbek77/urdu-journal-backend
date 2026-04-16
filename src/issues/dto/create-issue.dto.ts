@@ -1,11 +1,13 @@
 import { IsInt, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CreateIssueDto {
   @ApiProperty({
     example: 1,
     description: 'Journal volume',
   })
+  @Type(() => Number)
   @IsInt()
   volume!: number;
 
@@ -13,6 +15,7 @@ export class CreateIssueDto {
     example: 2,
     description: 'Issue number',
   })
+  @Type(() => Number)
   @IsInt()
   number!: number;
 
@@ -20,6 +23,7 @@ export class CreateIssueDto {
     example: 2026,
     description: 'Publication year',
   })
+  @Type(() => Number)
   @IsInt()
   year!: number;
 

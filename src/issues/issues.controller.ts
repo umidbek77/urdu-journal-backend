@@ -5,7 +5,7 @@ import {
   Get,
   UseGuards,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
 } from '@nestjs/common';
 import { IssuesService } from './issues.service';
 import { CreateIssueDto } from './dto/create-issue.dto';
@@ -21,7 +21,7 @@ import {
   ApiOperation,
   ApiConsumes,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Issues')
 @ApiBearerAuth()
@@ -32,13 +32,26 @@ export class IssuesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'file', maxCount: 1 },
+      { name: 'coverImage', maxCount: 1 },
+    ]),
+  )
   @ApiConsumes('multipart/form-data')
   async createIssue(
     @Body() dto: CreateIssueDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles()
+    files: {
+      file?: Express.Multer.File[];
+      coverImage?: Express.Multer.File[];
+    },
   ) {
-    return this.issuesService.createIssue(dto, file);
+    return this.issuesService.createIssue(
+      dto,
+      files.file?.[0],
+      files.coverImage?.[0],
+    );
   }
 
   @Get()
