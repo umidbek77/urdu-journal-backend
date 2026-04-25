@@ -83,25 +83,25 @@ export class AdminController {
   @Get('editors/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
-  @ApiParam({ name: 'id', example: 'uuid-editor-id' })
+  @ApiParam({ name: 'id', example: 1 })
   async getEditor(@Param('id') id: string) {
-    return this.adminService.getEditor(id);
+    return this.adminService.getEditor(Number(id));
   }
 
   @Patch('editors/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
-  @ApiParam({ name: 'id', example: 'uuid-editor-id' })
+  @ApiParam({ name: 'id', example: 1 })
   async updateEditor(@Param('id') id: string, @Body() body: UpdateEditorDto) {
-    return this.adminService.updateEditor(id, body);
+    return this.adminService.updateEditor(Number(id), body);
   }
 
   @Delete('editors/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
-  @ApiParam({ name: 'id', example: 'uuid-editor-id' })
+  @ApiParam({ name: 'id', example: 1 })
   async deleteEditor(@Param('id') id: string) {
-    return this.adminService.deleteEditor(id);
+    return this.adminService.deleteEditor(Number(id));
   }
 
   @Get('users')
@@ -114,5 +114,50 @@ export class AdminController {
     const limit = pagination.limit ?? 10;
 
     return this.adminService.getUsers(page, limit);
+  }
+
+  @Patch('articles/:id/assign/:editorId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Assign article to editor' })
+  async assignArticle(
+    @Param('id') id: string,
+    @Param('editorId') editorId: string,
+  ) {
+    return this.adminService.assignArticle(Number(id), Number(editorId));
+  }
+
+  @Get('articles')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all articles with filters' })
+  async getAllArticles(
+    @Query('status') status?: string,
+    @Query('category') category?: string,
+    @Query() pagination?: PaginationDto,
+  ) {
+    return this.adminService.getAllArticles(
+      status,
+      category,
+      pagination?.page ?? 1,
+      pagination?.limit ?? 10,
+    );
+  }
+
+  @Get('articles/accepted')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  async acceptedArticles(@Query() pagination: PaginationDto) {
+    return this.adminService.getAcceptedArticles(
+      pagination.page ?? 1,
+      pagination.limit ?? 10,
+    );
+  }
+
+  @Get('dashboard/full')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  async fullDashboard() {
+    return this.adminService.fullDashboard();
   }
 }

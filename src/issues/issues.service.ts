@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIssueDto } from './dto/create-issue.dto';
 import { SupabaseService } from 'src/supabase/supabase.service';
+import { UpdateIssueDto } from './dto/update-issue.dto';
 
 @Injectable()
 export class IssuesService {
@@ -68,6 +69,40 @@ export class IssuesService {
       include: {
         articles: true,
       },
+    });
+  }
+
+  async updateIssue(id: number, dto: UpdateIssueDto) {
+    const issue = await this.prisma.issue.findUnique({
+      where: { id },
+    });
+
+    if (!issue) {
+      throw new NotFoundException('Issue not found');
+    }
+
+    return this.prisma.issue.update({
+      where: { id },
+      data: {
+        ...dto,
+        publishedDate: dto.publishedDate
+          ? new Date(dto.publishedDate)
+          : undefined,
+      },
+    });
+  }
+
+  async deleteIssue(id: number) {
+    const issue = await this.prisma.issue.findUnique({
+      where: { id },
+    });
+
+    if (!issue) {
+      throw new NotFoundException('Issue not found');
+    }
+
+    return this.prisma.issue.delete({
+      where: { id },
     });
   }
 }

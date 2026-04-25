@@ -12,6 +12,8 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
+import { Query } from '@nestjs/common';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ArticlesService } from './articles.service';
@@ -102,13 +104,15 @@ export class ArticlesController {
     return this.articlesService.getSubmittedArticles();
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.EDITOR)
   @Patch(':id/status')
   @ApiParam({ name: 'id', example: 'article-id' })
   async updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateArticleStatusDto,
   ) {
-    return this.articlesService.updateStatus(id, dto.status);
+    return this.articlesService.updateStatus(Number(id), dto.status);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -141,7 +145,12 @@ export class ArticlesController {
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: ReviewArticleDto,
   ) {
-    return this.articlesService.reviewArticle(id, req.user.userId, dto, file);
+    return this.articlesService.reviewArticle(
+  Number(id),
+  req.user.userId,
+  dto,
+  file,
+);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -167,7 +176,7 @@ export class ArticlesController {
       throw new BadRequestException('File is required');
     }
 
-    return this.articlesService.uploadPayment(id, file);
+    return this.articlesService.uploadPayment(Number(id), file);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -179,7 +188,10 @@ export class ArticlesController {
     @Param('id') id: string,
     @Param('issueId') issueId: string,
   ) {
-    return this.articlesService.publishArticle(id, issueId);
+    return this.articlesService.publishArticle(
+  Number(id),
+  Number(issueId),
+);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -192,8 +204,8 @@ export class ArticlesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.EDITOR)
   @Get('editor/articles')
-  async editorArticles() {
-    return this.articlesService.editorArticles();
+  async editorArticles(@Req() req) {
+    return this.articlesService.editorArticles(req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -201,7 +213,7 @@ export class ArticlesController {
   @Get('editor/articles/:id')
   @ApiParam({ name: 'id', example: 'article-id' })
   async articleDetail(@Param('id') id: string) {
-    return this.articlesService.getArticleDetail(id);
+    return this.articlesService.getArticleDetail(Number(id));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -212,10 +224,10 @@ export class ArticlesController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/download')
-  @ApiParam({ name: 'id', example: 'article-id' })
-  async download(@Param('id') id: string) {
-    return this.articlesService.downloadArticle(id);
-  }
+@ApiParam({ name: 'id', example: 1 })
+async download(@Param('id') id: string) {
+  return this.articlesService.downloadArticle(Number(id));
+}
 
   @Get('accepted')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -223,4 +235,13 @@ export class ArticlesController {
   async acceptedArticles() {
     return this.articlesService.acceptedArticles();
   }
+
+  @Get('published')
+@ApiOperation({ summary: 'Public: Get published articles' })
+async publishedArticles(@Query() pagination: PaginationDto) {
+  return this.articlesService.getPublishedArticles(
+    pagination.page ?? 1,
+    pagination.limit ?? 10,
+  );
+}
 }

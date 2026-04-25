@@ -1,5 +1,7 @@
 import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum } from 'class-validator';
+import { Category } from '@prisma/client';
 
 export class CreateArticleDto {
   @ApiProperty({
@@ -18,6 +20,14 @@ export class CreateArticleDto {
   @IsString()
   @IsNotEmpty()
   abstract!: string;
+
+  @ApiProperty({
+    enum: Category,
+    example: Category.PROGRAMMING,
+    description: 'Article category',
+  })
+  @IsEnum(Category)
+  category!: Category;
 
   @ApiProperty({
     example: 'AI, education, machine learning',

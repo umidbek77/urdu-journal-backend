@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ArticleStatus, Role } from '@prisma/client';
 import { UpdateEditorDto } from './dto/update-editor.dto';
@@ -34,6 +34,92 @@ export class AdminService {
       articles,
       published,
       pending,
+    };
+  }
+
+  async getAllArticles(
+    status?: string,
+    category?: string,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (category) {
+      where.category = category;
+    }
+
+    const data = await this.prisma.article.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: true,
+        editor: true,
+      },
+    });
+
+    const total = await this.prisma.article.count({ where });
+
+    return {
+      data,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
+  }
+
+  async getAcceptedArticles(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const data = await this.prisma.article.findMany({
+      where: {
+        status: 'ACCEPTED',
+      },
+      skip,
+      take: limit,
+      include: {
+        author: true,
+        editor: true,
+      },
+    });
+
+    const total = await this.prisma.article.count({
+      where: { status: 'ACCEPTED' },
+    });
+
+    return {
+      data,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
+  }
+
+  async fullDashboard() {
+    const total = await this.prisma.article.count();
+
+    const byStatus = await this.prisma.article.groupBy({
+      by: ['status'],
+      _count: { status: true },
+    });
+
+    const byCategory = await this.prisma.article.groupBy({
+      by: ['category'],
+      _count: { category: true },
+    });
+
+    return {
+      total,
+      byStatus,
+      byCategory,
     };
   }
 
@@ -80,18 +166,21 @@ export class AdminService {
         email: data.email,
         password: hashedPassword,
         role: Role.EDITOR,
+        categories: data.categories,
       },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        categories: true,
         createdAt: true,
       },
     });
   }
 
-  async updateEditor(id: string, data: UpdateEditorDto) {
+  // ✅ FIX
+  async updateEditor(id: number, data: UpdateEditorDto) {
     return this.prisma.user.update({
       where: { id },
       data,
@@ -104,13 +193,15 @@ export class AdminService {
     });
   }
 
-  async deleteEditor(id: string) {
+  // ✅ FIX
+  async deleteEditor(id: number) {
     return this.prisma.user.delete({
       where: { id },
     });
   }
 
-  async getEditor(id: string) {
+  // ✅ FIX
+  async getEditor(id: number) {
     return this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -156,6 +247,37 @@ export class AdminService {
       page,
       lastPage: Math.ceil(total / limit),
     };
+  }
+
+  async assignArticle(articleId: number, editorId: number) {
+    const article = await this.prisma.article.findUnique({
+      where: { id: articleId },
+    });
+
+    if (!article) {
+      throw new BadRequestException('Article not found');
+    }
+
+    const editor = await this.prisma.user.findUnique({
+      where: { id: editorId },
+    });
+
+    if (!editor || editor.role !== Role.EDITOR) {
+      throw new BadRequestException('Invalid editor');
+    }
+
+    if (!editor.categories.includes(article.category)) {
+      throw new BadRequestException('Editor does not match article category');
+    }
+
+    return this.prisma.article.update({
+      where: { id: articleId },
+      data: {
+        editorId,
+        status: 'UNDER_REVIEW',
+        assignedByAdmin: true,
+      },
+    });
   }
 
   async articleStatusStats() {

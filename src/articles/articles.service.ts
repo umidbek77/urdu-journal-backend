@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -33,7 +33,7 @@ export class ArticlesService {
     return publicUrl.publicUrl;
   }
 
-  async submitArticle(userId: string, dto: CreateArticleDto) {
+  async submitArticle(userId: number, dto: CreateArticleDto) {
     const keywordsArray = dto.keywords.split(',').map((k) => k.trim());
 
     return this.prisma.article.create({
@@ -43,11 +43,13 @@ export class ArticlesService {
         keywords: keywordsArray,
         fileUrl: dto.fileUrl,
         authorId: userId,
+        category: dto.category,
       },
     });
   }
 
-  async getMyArticles(userId: string) {
+  // ✅ FIX
+  async getMyArticles(userId: number) {
     return this.prisma.article.findMany({
       where: { authorId: userId },
       orderBy: { createdAt: 'desc' },
@@ -56,10 +58,6 @@ export class ArticlesService {
         title: true,
         status: true,
         createdAt: true,
-        updatedAt: true,
-        feedback: true,
-        reviewFileUrl: true,
-        paymentReceiptUrl: true,
       },
     });
   }
@@ -75,10 +73,11 @@ export class ArticlesService {
     });
   }
 
-  async updateStatus(id: string, status: string) {
+  // ✅ FIX
+  async updateStatus(id: number, status: string) {
     return this.prisma.article.update({
       where: {
-        id: id,
+        id,
       },
       data: {
         status: status as any,
@@ -86,9 +85,10 @@ export class ArticlesService {
     });
   }
 
+  // ✅ FIX
   async reviewArticle(
-    articleId: string,
-    editorId: string,
+    articleId: number,
+    editorId: number,
     dto: ReviewArticleDto,
     file?: Express.Multer.File,
   ) {
@@ -127,7 +127,8 @@ export class ArticlesService {
     });
   }
 
-  async uploadPayment(articleId: string, file: Express.Multer.File) {
+  // ✅ FIX
+  async uploadPayment(articleId: number, file: Express.Multer.File) {
     const article = await this.prisma.article.findUnique({
       where: { id: articleId },
     });
@@ -158,42 +159,44 @@ export class ArticlesService {
     });
   }
 
-  async publishArticle(articleId: string, issueId: string) {
+  // ✅ FIX
+  async publishArticle(articleId: number, issueId: number) {
     return this.prisma.article.update({
       where: {
         id: articleId,
       },
       data: {
         status: 'PUBLISHED',
-        issueId: issueId,
+        issueId,
       },
     });
   }
 
-  async editorDashboard(editorId: string) {
+  // ✅ FIX
+  async editorDashboard(editorId: number) {
     const assigned = await this.prisma.article.count({
       where: {
-        editorId: editorId,
+        editorId,
       },
     });
 
     const underReview = await this.prisma.article.count({
       where: {
-        editorId: editorId,
+        editorId,
         status: 'UNDER_REVIEW',
       },
     });
 
     const accepted = await this.prisma.article.count({
       where: {
-        editorId: editorId,
+        editorId,
         status: 'ACCEPTED',
       },
     });
 
     const rejected = await this.prisma.article.count({
       where: {
-        editorId: editorId,
+        editorId,
         status: 'REJECTED',
       },
     });
@@ -206,30 +209,18 @@ export class ArticlesService {
     };
   }
 
-  async editorArticles() {
+  async editorArticles(editorId: number) {
     return this.prisma.article.findMany({
       where: {
-        status: {
-          in: ['SUBMITTED', 'UNDER_REVIEW', 'REVISION'],
-        },
+        editorId,
       },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            affiliation: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
+        author: true,
       },
     });
   }
 
-  async getArticleDetail(id: string) {
+  async getArticleDetail(id: number) {
     return this.prisma.article.findUnique({
       where: {
         id,
@@ -247,7 +238,7 @@ export class ArticlesService {
     });
   }
 
-  async authorDashboard(userId: string) {
+  async authorDashboard(userId: number) {
     const submitted = await this.prisma.article.count({
       where: {
         authorId: userId,
@@ -299,17 +290,22 @@ export class ArticlesService {
     };
   }
 
-  async downloadArticle(id: string) {
+  async downloadArticle(id: number) {
     const article = await this.prisma.article.findUnique({
       where: { id },
       select: {
         fileUrl: true,
         title: true,
+        status: true,
       },
     });
 
     if (!article) {
-      throw new Error('Article not found');
+      throw new NotFoundException('Article not found');
+    }
+
+    if (article.status !== 'PUBLISHED') {
+      throw new ForbiddenException('Not allowed');
     }
 
     return article;
@@ -328,5 +324,38 @@ export class ArticlesService {
         createdAt: 'desc',
       },
     });
+  }
+
+  async getPublishedArticles(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const data = await this.prisma.article.findMany({
+      where: {
+        status: 'PUBLISHED',
+      },
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: {
+          select: {
+            name: true,
+            affiliation: true,
+          },
+        },
+        issue: true,
+      },
+    });
+
+    const total = await this.prisma.article.count({
+      where: { status: 'PUBLISHED' },
+    });
+
+    return {
+      data,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
   }
 }

@@ -22,8 +22,17 @@ enum ArticleStatus {
   PUBLISHED
 }
 
+enum Category {
+  PROGRAMMING
+  INFOCOMMUNICATION
+  AI
+  CRYPTOGRAPHY
+  NETWORK
+  INTELLIGENT_SYSTEMS
+}
+
 model User {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   name        String
   email       String   @unique
   password    String
@@ -31,51 +40,42 @@ model User {
   affiliation String?
   createdAt   DateTime @default(now())
   avatarUrl   String?
+  categories  Category[]
   articles    Article[]
   reviews     Article[] @relation("EditorArticles")
 }
 
 model Article {
-  id        String        @id @default(uuid())
-
+  id        Int      @id @default(autoincrement())
   title     String
   abstract  String
   keywords  String[]
-
   fileUrl   String
   status    ArticleStatus @default(SUBMITTED)
-
-  authorId  String
-  author    User          @relation(fields: [authorId], references: [id])
-
-  editorId  String?
-  editor    User?         @relation("EditorArticles", fields: [editorId], references: [id])
-
+  category  Category
+  assignedByAdmin Boolean @default(false)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  editorId  Int?
+  editor    User?    @relation("EditorArticles", fields: [editorId], references: [id])
   feedback  String?
-
   reviewFileUrl String?
   paymentReceiptUrl String?
-
-  issueId   String?
-  issue     Issue?        @relation(fields: [issueId], references: [id])
-
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  issueId   Int?
+  issue     Issue?   @relation(fields: [issueId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Issue {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   volume    Int
   number    Int
   year      Int
-
   pdfUrl    String?
-
   coverImageUrl String?
   publishedDate DateTime?
   series String?
-
   articles  Article[]
-
   createdAt DateTime @default(now())
 }

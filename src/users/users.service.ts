@@ -1,8 +1,7 @@
 import { PrismaService } from './../prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
@@ -29,7 +28,7 @@ export class UsersService {
     });
   }
 
-  async uploadAvatar(userId: string, file: Express.Multer.File) {
+  async uploadAvatar(userId: number, file: Express.Multer.File) {
     const supabase = this.supabaseService.getClient();
 
     const fileName = `avatar-${userId}-${Date.now()}`;
@@ -58,7 +57,7 @@ export class UsersService {
     };
   }
 
-  async getProfile(userId: string) {
+  async getProfile(userId: number) {
     return this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -72,7 +71,7 @@ export class UsersService {
     });
   }
 
-  async updateProfile(userId: string, data: any) {
+  async updateProfile(userId: number, data: any) {
     return this.prisma.user.update({
       where: { id: userId },
       data,
@@ -86,7 +85,7 @@ export class UsersService {
   }
 
   async changePassword(
-    userId: string,
+    userId: number,
     oldPassword: string,
     newPassword: string,
   ) {
