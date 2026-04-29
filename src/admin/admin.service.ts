@@ -258,6 +258,10 @@ export class AdminService {
       throw new BadRequestException('Article not found');
     }
 
+    if (!article.category) {
+      throw new BadRequestException('Article category is missing');
+    }
+
     const editor = await this.prisma.user.findUnique({
       where: { id: editorId },
     });
@@ -266,7 +270,12 @@ export class AdminService {
       throw new BadRequestException('Invalid editor');
     }
 
-    if (!editor.categories.includes(article.category)) {
+    const articleCategory = article.category.toLowerCase();
+    const editorCategories = (editor.categories || []).map((c) =>
+      c.toLowerCase(),
+    );
+
+    if (!editorCategories.includes(articleCategory)) {
       throw new BadRequestException('Editor does not match article category');
     }
 
