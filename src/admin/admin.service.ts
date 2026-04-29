@@ -139,6 +139,7 @@ export class AdminService {
         id: true,
         name: true,
         email: true,
+        categories: true,
         createdAt: true,
       },
     });
