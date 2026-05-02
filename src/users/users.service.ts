@@ -67,6 +67,7 @@ export class UsersService {
         role: true,
         affiliation: true,
         createdAt: true,
+        avatarUrl: true,
       },
     });
   }
