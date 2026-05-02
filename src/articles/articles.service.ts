@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -95,8 +99,8 @@ export class ArticlesService {
     let reviewFileUrl: string | null = null;
 
     if (file) {
-      if (file.mimetype !== 'application/pdf') {
-        throw new Error('Only PDF allowed');
+      if (!file.originalname.match(/\.(pdf|docx)$/i)) {
+        throw new Error('Invalid file format');
       }
 
       const supabase = this.supabaseService.getClient();
