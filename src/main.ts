@@ -12,6 +12,7 @@ async function bootstrap() {
       'https://urdu-journal.vercel.app',
       'https://urdu-kit.web.app',
       'https://urdu-kit.firebaseapp.com',
+      'https://kit-urdu-journal.app',
     ],
     credentials: true,
   });
